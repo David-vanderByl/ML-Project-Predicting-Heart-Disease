@@ -1,3 +1,5 @@
+**Note this is a markdown conversion of the Predicting Heart Disease.ipynb file to see figures, etc please open that .ipynb file**
+
 # Project: Predicting Heart Disease
 ---
 
