@@ -12,10 +12,15 @@ with open(ipynb_file, 'r', encoding='utf-8') as f:
 exporter = MarkdownExporter()
 exporter.exclude_output_prompt = False  # Include code cell prompts
 exporter.exclude_input = True  # Exclude code cell inputs
-exporter.exclude_output = True  # Include code cell outputs
+exporter.exclude_output = False  # Include code cell outputs
 
-# Add styling information to the notebook metadata
-notebook['metadata']['jupyter']['nbconvert']['execute_notebooks'] = 'auto'
+# Check if 'jupyter' key exists in metadata
+if 'jupyter' not in notebook['metadata']:
+    # If 'jupyter' key is missing, add it with an empty dictionary
+    notebook['metadata']['jupyter'] = {}
+
+# Add nbconvert and widgets configuration to 'jupyter' metadata
+notebook['metadata']['jupyter']['nbconvert'] = {'execute_notebooks': 'auto'}
 notebook['metadata']['jupyter']['widgets'] = {
     'widget_state': {},
     'application/vnd.jupyter.widget-view+json': {},
@@ -30,5 +35,3 @@ markdown, _ = exporter.from_notebook_node(notebook, resources={})
 markdown_file = 'markdown.md'
 with open(markdown_file, 'w', encoding='utf-8') as f:
     f.write(markdown)
-
-
