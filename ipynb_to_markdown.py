@@ -1,3 +1,7 @@
+
+# Convert the notebook to Markdown
+
+
 from nbconvert import MarkdownExporter
 import nbformat
 import shutil
@@ -6,23 +10,29 @@ import os
 # Specify the path to the .ipynb file
 ipynb_file = 'Predicting Heart Disease.ipynb'
 
+print(f'Loading notebook: {ipynb_file}')
+
 # Load the notebook file
 with open(ipynb_file, 'r', encoding='utf-8') as f:
     notebook = nbformat.read(f, as_version=4)
 
 # Configure the exporter
+print('Configuring exporter')
 exporter = MarkdownExporter()
 
 # Convert the notebook to Markdown
+print('Converting notebook to Markdown')
 markdown, resources = exporter.from_notebook_node(notebook)
 
 # Save the Markdown content to a file
 markdown_file = 'markdown.md'
+print(f'Saving Markdown to: {markdown_file}')
 with open(markdown_file, 'w', encoding='utf-8') as f:
     f.write(markdown)
 
 # Create a directory for saving the output images
 output_dir = 'output_images'
+print(f'Saving output images to: {output_dir}')
 os.makedirs(output_dir, exist_ok=True)
 
 # Find and save output images
@@ -42,5 +52,6 @@ for image_file in os.listdir(output_dir):
     markdown = markdown.replace(image_filename, new_image_path)
 
 # Save the updated Markdown file
+print(f'Saving updated Markdown to: {markdown_file}')
 with open(markdown_file, 'w', encoding='utf-8') as f:
-    f.write(markdown)
+    f.write(markdown)   
