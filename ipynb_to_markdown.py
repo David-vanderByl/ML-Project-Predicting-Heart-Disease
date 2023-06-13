@@ -10,6 +10,9 @@ with open(ipynb_file, 'r', encoding='utf-8') as f:
 
 # Configure the exporter
 exporter = MarkdownExporter()
+exporter.exclude_output_prompt = False  # Include code cell prompts
+exporter.exclude_input = True  # Exclude code cell inputs
+exporter.exclude_output = False  # Include code cell outputs
 
 # Convert the notebook to Markdown
 markdown, _ = exporter.from_notebook_node(notebook)
@@ -18,3 +21,4 @@ markdown, _ = exporter.from_notebook_node(notebook)
 markdown_file = 'markdown.md'
 with open(markdown_file, 'w', encoding='utf-8') as f:
     f.write(markdown)
+
