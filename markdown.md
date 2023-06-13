@@ -23,8 +23,34 @@ probable or definite left ventricular hypertrophy by Estes' criteria]
 
 
 
+
+```python
+import pandas as pd
+import numpy as np
+
+import matplotlib.pylab as plt
+import seaborn as sns
+plt.style.use('ggplot')
+
+
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.neighbors import KNeighborsClassifier
+
+# set the display option to show all columns
+pd.set_option('display.max_columns', None)
+
+
+```
+
 ## 1. Data Exploring
 ---
+
+
+```python
+df = pd.read_csv('heart_disease_prediction.csv')
+df.head()
+```
 
 
 
@@ -143,9 +169,25 @@ probable or definite left ventricular hypertrophy by Estes' criteria]
 
 
 
+
+```python
+# Print number of feature and observations
+num_features = df.shape[1]
+num_observations = df.shape[0]
+
+print("Number of features:", num_features)
+print("Number of observations:", num_observations)
+```
+
     Number of features: 12
     Number of observations: 918
 
+
+
+```python
+# Displaying variable  
+df.dtypes
+```
 
 
 
@@ -167,11 +209,24 @@ probable or definite left ventricular hypertrophy by Estes' criteria]
 
 
 
+```python
+# Getting categorical variables
+categorical_columns = df.columns[df.dtypes == object]
+categorical_columns
+```
+
+
 
 
     Index(['Sex', 'ChestPainType', 'RestingECG', 'ExerciseAngina', 'ST_Slope'], dtype='object')
 
 
+
+
+```python
+# Displaying summary statistics of numerical types
+df.describe()
+```
 
 
 
@@ -291,6 +346,12 @@ probable or definite left ventricular hypertrophy by Estes' criteria]
 
 
 
+```python
+# checking for any missing cells
+df.isna().sum()
+```
+
+
 
 
     Age               0
@@ -329,16 +390,119 @@ probable or definite left ventricular hypertrophy by Estes' criteria]
 Creating frequency tables for all the categorical data
 
 
+```python
+# Set the figure size
+num_rows = 2
+num_cols = 3
+fig, axes = plt.subplots(num_rows, num_cols, figsize=(12, 8))
+num_plots = num_rows * num_cols
+# Flatten the axes array if necessary
+if num_plots == 1:
+    axes = [axes]
+
+# Iterate through each categorical column and create the bar chart
+for i, column in enumerate(categorical_columns):
+    row = i // num_cols
+    col = i % num_cols
+    
+    # Count the number of rows for each category
+    category_counts = df[column].value_counts()
+    
+    # Create a bar chart
+    axes[row][col].bar(category_counts.index, category_counts.values)
+    
+    # Add labels and title
+    axes[row][col].set_xlabel(column)
+    axes[row][col].set_ylabel("Number of Rows")
+    axes[row][col].set_title("Number of Rows for each Category - " + column, fontsize=10)
+    
+    # Add data labels
+    for i, count in enumerate(category_counts):
+        axes[row][col].text(i, count, str(count), ha='center', va='bottom')
+
+# Remove any empty subplots
+if num_plots < num_rows * num_cols:
+    for i in range(num_plots, num_rows * num_cols):
+        fig.delaxes(axes.flatten()[i])
+
+# Adjust spacing between subplots
+fig.tight_layout()
+
+# Display the plot
+plt.show()
+```
+
+
     
 ![png](output_13_0.png)
     
 
 
 
+```python
+# Create a figure and axes for the subplots
+fig, axes = plt.subplots(2, 3, figsize=(12, 8))
+
+# Flatten the axes array for easy iteration
+axes = axes.flatten()
+
+# Iterate through each categorical column
+for i, column in enumerate(categorical_columns):
+    # Group the data by 'HeartDisease' and count the number of rows for each category
+    grouped_counts = df.groupby(['HeartDisease', column]).size().unstack()
+
+    # Set the current subplot
+    ax = axes[i]
+
+    # Create a stacked bar chart
+    grouped_counts.plot(kind='bar', stacked=True, ax=ax)
+
+    # Add labels and title
+    ax.set_xlabel(column)
+    ax.set_ylabel("Number of Rows")
+    ax.set_title("Number of Rows for each Category\n - " + column + " (Grouped by HeartDisease)", fontsize=10)
+
+    # Add a legend
+    ax.legend(loc=1)
+    
+    # Set x-axis tick labels based on column values
+    xtick_labels = ['No Heart Disease', 'Heart Disease']
+    # Set x-axis tick labels font size and rotation
+    ax.set_xticklabels(xtick_labels, fontsize=8, rotation=0)
+
+# Remove any empty subplots
+if len(categorical_columns) < len(axes):
+    for j in range(len(categorical_columns), len(axes)):
+        fig.delaxes(axes[j])
+
+# Adjust the spacing between subplots
+fig.tight_layout()
+
+# Display the plot
+plt.show()
+
+
+```
+
+
     
 ![png](output_14_0.png)
     
 
+
+
+```python
+# Calculate the percentage of patients with heart disease who are male and over 50 years old
+heart_disease_patients = df[df['HeartDisease'] == 1]
+
+male_patients_over_50 = heart_disease_patients.query("Sex == 'M' and Age > 50")  # Using df.query instead
+# male_patients_over_50 = heart_disease_patients[(heart_disease_patients['Sex'] == 'male') & (heart_disease_patients['Age'] > 50)]
+
+percentage = (len(male_patients_over_50) / len(heart_disease_patients)) * 100
+
+print("Percentage of heart disease patients who are male and over 50: ", percentage, '%')
+
+```
 
     Percentage of heart disease patients who are male and over 50:  67.71653543307087 %
 
@@ -374,12 +538,44 @@ There are a few ways we can handle these values:
 
 For the purpose of this project option 3 will not be carried out as the project aim is to improve ML skills not to clean data.
 
+
+```python
+# Count the number of rows with 0 value for RestingBP
+restingbp_zeros_count = (df['RestingBP'] == 0).sum()
+print('Count the number of rows with 0 value for RestingBP: ', restingbp_zeros_count)
+
+# Count the number of rows with 0 value for Cholesterol
+cholesterol_zeros_count = (df['Cholesterol'] == 0).sum()
+print('Count the number of rows with 0 value for Cholesterol: ', cholesterol_zeros_count)
+```
+
     Count the number of rows with 0 value for RestingBP:  1
     Count the number of rows with 0 value for Cholesterol:  172
 
 
+
+```python
+# Remove rows with 0 values for RestingBP as there is only one row
+df = df[(df['RestingBP'] != 0)]
+
+# Rechecking -- Count the number of rows with 0 value for RestingBP
+restingbp_zeros_count = (df['RestingBP'] == 0).sum()
+print('Count the number of rows with 0 value for RestingBP should now be 0: ', restingbp_zeros_count)
+```
+
     Count the number of rows with 0 value for RestingBP should now be 0:  0
 
+
+
+```python
+# Replace 0 values with the median value of the 'Cholesterol' column
+df.loc[df['Cholesterol'] == 0, 'Cholesterol'] = df['Cholesterol'].median()
+
+# Rechecking -- Count the number of rows with 0 value for Cholesterol
+cholesterol_zeros_count = (df['Cholesterol'] == 0).sum()
+print('Count the number of rows with 0 value for Cholesterol should now be 0:', cholesterol_zeros_count)
+
+```
 
     Count the number of rows with 0 value for Cholesterol should now be 0: 0
 
@@ -422,10 +618,62 @@ Selecting features using the square of the Pearson correlation coefficient inste
 ##### One-hot encode the categorical features
 
 
+```python
+df_features_selection = pd.get_dummies(data = df, columns = categorical_columns.to_list(), drop_first=False)
+```
+
+
+```python
+# Compute the correlation matrix
+correlation_matrix = df_features_selection.corr(numeric_only=True)
+correlation_matrix_squared = correlation_matrix ** 2
+
+# Create the subplots
+fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+
+# Plot the first heatmap
+sns.heatmap(correlation_matrix, annot=False, cmap='coolwarm', vmin=-1, vmax=1, ax=axes[0])
+axes[0].set_title("Pearson's Correlation Heat \n Map for Heart Disease Dataset")
+
+
+# Plot the second heatmap
+sns.heatmap(correlation_matrix_squared, annot=False, cmap='coolwarm', vmin=0, vmax=1, ax=axes[1])
+axes[1].set_title("Squared Pearson's Correlation Heat \n Map for Heart Disease Dataset")
+
+
+# Adjust spacing between subplots
+plt.tight_layout()
+
+# Show the plot
+plt.show()
+
+```
+
+
     
 ![png](output_26_0.png)
     
 
+
+
+```python
+# Select the top 5 features with highest correlation
+top_5_features_pearson = correlation_matrix["HeartDisease"].sort_values(ascending=False)[1:6].index.to_list()
+top_5_features_pearson_squaured = correlation_matrix_squared["HeartDisease"].sort_values(ascending=False)[1:6].index.to_list()
+
+# Select the bottom 5 features with lowest correlation
+bottom_5_features_pearson  = correlation_matrix["HeartDisease"].sort_values(ascending=True)[1:6].index.to_list()
+bottom_5_features_pearson_squaured = correlation_matrix_squared["HeartDisease"].sort_values(ascending=True)[1:6].index.to_list()
+
+# Create a DataFrame with top and bottom features
+selected_features_df = pd.DataFrame({'Top 5 Features Pearson': top_5_features_pearson, 
+                                     'Bottom 5 Features Pearson': bottom_5_features_pearson,
+                                     'Top 5 Features Pearson Sqaured': bottom_5_features_pearson_squaured, 
+                                     'Bottom 5 Features Pearson Sqaured': top_5_features_pearson_squaured,
+                                     })
+
+selected_features_df
+```
 
 
 
@@ -514,9 +762,77 @@ Based on the above correlations and general/domain knowledge
 
 **Selecting features and applying one-hot encoding**
 
+
+```python
+features = ['Age', 'Sex', 'ChestPainType', 'RestingBP', 'Cholesterol', 'FastingBS',
+            'RestingECG', 'MaxHR', 'ExerciseAngina', 'Oldpeak', 'ST_Slope'
+            ]
+
+# Perform one-hot encoding on categorical columns
+df_features = pd.get_dummies(
+    data=df, columns=categorical_columns.to_list(), drop_first=False)
+
+
+# Extract the column names related to the features after one-hot encoding
+onehot_features = [column_name for column_name in df_features.columns 
+                   if any(feature in column_name for feature in features)]
+```
+
 **Splitting Data in Training, validation and test data**
 
+
+```python
+# TODO: Could split data as training and testing sets only as grid search for hyperparameters will be done later
+# and this will automatically take care of the validation set
+
+# Select the desired features from the DataFrame
+X = df_features[onehot_features]
+y = df_features["HeartDisease"]
+
+# Splitting data into training, validation, and test sets with a 60:20:20 ratio
+X_train, X_val, y_train, y_val = train_test_split(
+    X, y, test_size=0.20, random_state=417)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X_train, y_train, test_size=0.20 * X.shape[0] / X_train.shape[0], random_state=417)
+```
+
 **Testing single features models to comfirm feature selection**
+
+
+```python
+# Initialize lists to store feature names and accuracies
+feature_names = []
+accuracies = []
+
+# Iterate over the selected features
+for feature in onehot_features:
+    X_train_single_feature = X_train[[feature]]  # Select a single feature
+    X_val_single_feature = X_val[[feature]]
+
+    # Create and fit the k-NN classifier
+    n_neighbors = 25  # Set the number of neighbors - this could be iterated over as well to get the best value
+    classifier = KNeighborsClassifier(n_neighbors=n_neighbors)
+    classifier.fit(X_train_single_feature, y_train)
+
+    # Evaluate the model on the validation set
+    accuracy = classifier.score(X_val_single_feature, y_val)
+    
+    # Append feature name and accuracy to the respective lists
+    feature_names.append(feature)
+    accuracies.append(accuracy)
+
+    # Print the accuracy
+    # print(f"Accuracy using {feature}: {accuracy}")
+    
+# Create a Pandas DataFrame with sorted feature names and accuracies
+feature_accuracy_df = pd.DataFrame({"Feature": onehot_features, "Accuracy": accuracies})
+
+# Sort the DataFrame based on the "Accuracy" column in descending order
+df_sorted = feature_accuracy_df.sort_values(by="Accuracy", ascending=False).reset_index(drop=True)
+df_sorted
+
+```
 
 
 
@@ -688,7 +1004,32 @@ In Section 5 (Building a Classifier 1) only single features were used to predict
 
 **Scaling/Normalising the data**
 
+
+```python
+# Normalizing features
+scaler = MinMaxScaler()
+X_scaled = scaler.fit_transform(X)
+X_train_scaled = scaler.transform(X_train)
+X_val_scaled = scaler.transform(X_val)
+X_test_scaled = scaler.transform(X_test)
+```
+
 **Testing K-NN classifier model with all features**
+
+
+```python
+# Create and fit the k-NN classifier
+n_neighbors = 15  # Set the number of neighbors - this could be iterated over as well to get the best value
+classifier = KNeighborsClassifier(n_neighbors=n_neighbors)
+
+classifier.fit(X_train_scaled, y_train)
+
+# Evaluate the model on the validation set
+accuracy = classifier.score(X_val_scaled, y_val)
+
+accuracy
+
+```
 
 
 
@@ -698,6 +1039,41 @@ In Section 5 (Building a Classifier 1) only single features were used to predict
 
 
 **Reducing features based on Section 5 and retesting model's accuracy**
+
+
+```python
+# Assume X_train_scaled is a NumPy array
+reduced_features = ['ST_Slope_Up',
+                    'ChestPainType_ASY',
+                    'Oldpeak',
+                    'ExerciseAngina_Y',
+                    'ChestPainType_ATA',
+                    'Sex_F',
+                    'ChestPainType_NAP',
+                    'Age'
+                    ]
+
+# Get the column indices corresponding to the reduced features
+feature_indices = [X_train.columns.get_loc(feature) for feature in reduced_features]
+
+# Reduce the dimensionality of X_train_scaled (val and test too) using array indexing
+X_train_reduced = X_train_scaled[:, feature_indices]
+X_val_reduced = X_val_scaled[:, feature_indices]
+X_test_reduced = X_test_scaled[:, feature_indices]
+```
+
+
+```python
+# Create and fit the k-NN classifier
+n_neighbors = 15
+classifier = KNeighborsClassifier(n_neighbors=n_neighbors)
+classifier.fit(X_train_reduced, y_train)
+
+# Evaluate the model on the validation set
+accuracy = classifier.score(X_val_reduced, y_val)
+print(accuracy)
+
+```
 
     0.8695652173913043
 
@@ -729,6 +1105,28 @@ Here's how GridSearchCV works with respect to data splitting:
 4. Finally, it selects the hyperparameter combination that yields the best performance based on the specified scoring metric.
 So, with GridSearchCV, you only need to provide the training data (X_train_scaled and y_train). It takes care of the internal cross-validation for evaluating different hyperparameter combinations.
 
+
+```python
+# Select the desired features from the DataFrame
+X = df_features[onehot_features]
+y = df_features["HeartDisease"]
+
+
+# Splitting data into training, validation, and test sets with a 60:20:20 ratio
+X_train_grid, X_test_grid, y_train_grid, y_test_grid = train_test_split(
+    X, y, test_size=0.20, random_state=417)
+
+# Normalizing features
+scaler = MinMaxScaler()
+X_scaled = scaler.fit_transform(X)
+X_train_scaled_grid = scaler.transform(X_train_grid)
+X_test_scaled_grid = scaler.transform(X_test_grid)
+
+# Reduce the dimensionality of X_train_scaled (val and test too) using array indexing
+X_train_reduced_grid = X_train_scaled_grid[:, feature_indices]
+X_test_reduced_grid = X_test_scaled_grid[:, feature_indices]
+```
+
 **Settting GridSearchCV Parameters to Test**
 
 When using GridSearchCV, you can test various hyperparameters of the KNeighborsClassifier model. In addition to `n_neighbors` and `metric`, you can explore other parameters that may affect the performance of the model. Some common parameters to consider for KNeighborsClassifier are:
@@ -741,13 +1139,53 @@ When using GridSearchCV, you can test various hyperparameters of the KNeighborsC
 
 - p: The power parameter for the Minkowski distance metric. For p=1, it corresponds to the Manhattan distance, and for p=2, it corresponds to the Euclidean distance.
 
+
+```python
+grid_params = {
+    "n_neighbors": range(1, 100),
+    "metric": ["minkowski", "manhattan"],
+    "weights": ["uniform", "distance"],
+    "algorithm": ["auto", "ball_tree", "kd_tree", "brute"],
+    "leaf_size": [10, 20, 30],
+    "p": [1, 2]
+}
+```
+
 **Grid search on base features**
+
+
+```python
+knn_1 = KNeighborsClassifier()
+
+knn_grid_1 = GridSearchCV(knn_1, grid_params, scoring='accuracy')
+knn_grid_1.fit(X_train_scaled_grid, y_train_grid)
+
+best_score = knn_grid_1.best_score_
+best_params = knn_grid_1.best_params_
+
+print(f"Best model's accuracy: {best_score*100:.2f}")
+print(f"Best model's parameters: {best_params}")
+```
 
     Best model's accuracy: 87.58
     Best model's parameters: {'algorithm': 'auto', 'leaf_size': 10, 'metric': 'minkowski', 'n_neighbors': 65, 'p': 1, 'weights': 'distance'}
 
 
 **Grid search on reduce feature set**
+
+
+```python
+knn_2 = KNeighborsClassifier()
+
+knn_grid_2 = GridSearchCV(knn_2, grid_params, scoring='accuracy')
+knn_grid_2.fit(X_train_reduced_grid, y_train_grid)
+
+best_score = knn_grid_2.best_score_
+best_params = knn_grid_2.best_params_
+
+print(f"Best model's accuracy: {best_score*100:.2f}")
+print(f"Best model's parameters: {best_params}")
+```
 
     Best model's accuracy: 85.53
     Best model's parameters: {'algorithm': 'brute', 'leaf_size': 10, 'metric': 'minkowski', 'n_neighbors': 11, 'p': 1, 'weights': 'uniform'}
@@ -761,6 +1199,23 @@ When using GridSearchCV, you can test various hyperparameters of the KNeighborsC
 
 ## 8. Model Evaluation on Test Set
 ---
+
+
+```python
+# Get the best model from base feature set
+best_model = knn_grid_1.best_estimator_
+
+# Evaluate the best model on the test set
+accuracy = best_model.score(X_test_scaled_grid, y_test_grid)
+print("Accuracy on the validation set from base feature set:", accuracy)
+
+# Get the best model from reduced feature set
+best_model = knn_grid_2.best_estimator_
+
+# Evaluate the best model on the test set
+accuracy = best_model.score(X_test_reduced_grid, y_test_grid)
+print("Accuracy on the validation set from reduce features:", accuracy)
+```
 
     Accuracy on the validation set from base feature set: 0.8641304347826086
     Accuracy on the validation set from reduce features: 0.8532608695652174

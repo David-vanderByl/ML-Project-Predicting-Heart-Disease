@@ -1,5 +1,7 @@
 from nbconvert import MarkdownExporter
 import nbformat
+import shutil
+import os
 
 # Specify the path to the .ipynb file
 ipynb_file = 'Predicting Heart Disease.ipynb'
@@ -10,28 +12,35 @@ with open(ipynb_file, 'r', encoding='utf-8') as f:
 
 # Configure the exporter
 exporter = MarkdownExporter()
-exporter.exclude_output_prompt = False  # Include code cell prompts
-exporter.exclude_input = True  # Exclude code cell inputs
-exporter.exclude_output = False  # Include code cell outputs
-
-# Check if 'jupyter' key exists in metadata
-if 'jupyter' not in notebook['metadata']:
-    # If 'jupyter' key is missing, add it with an empty dictionary
-    notebook['metadata']['jupyter'] = {}
-
-# Add nbconvert and widgets configuration to 'jupyter' metadata
-notebook['metadata']['jupyter']['nbconvert'] = {'execute_notebooks': 'auto'}
-notebook['metadata']['jupyter']['widgets'] = {
-    'widget_state': {},
-    'application/vnd.jupyter.widget-view+json': {},
-    'version_major': 2,
-    'version_minor': 0
-}
 
 # Convert the notebook to Markdown
-markdown, _ = exporter.from_notebook_node(notebook, resources={})
+markdown, resources = exporter.from_notebook_node(notebook)
 
 # Save the Markdown content to a file
 markdown_file = 'markdown.md'
+with open(markdown_file, 'w', encoding='utf-8') as f:
+    f.write(markdown)
+
+# Create a directory for saving the output images
+output_dir = 'output_images'
+os.makedirs(output_dir, exist_ok=True)
+
+# Find and save output images
+for output_file, output_data in resources.get('outputs', {}).items():
+    if isinstance(output_data, dict) and 'image/png' in output_data.get('output_type', []):
+        image_data = output_data.get('data', {}).get('image/png', b'')
+        if image_data:
+            image_filename = f'{output_file}.png'
+            image_path = os.path.join(output_dir, image_filename)
+            with open(image_path, 'wb') as f:
+                f.write(image_data)
+
+# Update the image paths in the Markdown file
+for image_file in os.listdir(output_dir):
+    image_filename = os.path.basename(image_file)
+    new_image_path = f'{output_dir}/{image_filename}'
+    markdown = markdown.replace(image_filename, new_image_path)
+
+# Save the updated Markdown file
 with open(markdown_file, 'w', encoding='utf-8') as f:
     f.write(markdown)
