@@ -1,38 +1,33 @@
-
-# Convert the notebook to Markdown
-
-
-from nbconvert import MarkdownExporter
+from nbconvert import NotebookExporter
 import nbformat
-import shutil
 import os
+import html2text
 
 # Specify the path to the .ipynb file
 ipynb_file = 'Predicting Heart Disease.ipynb'
-
-print(f'Loading notebook: {ipynb_file}')
 
 # Load the notebook file
 with open(ipynb_file, 'r', encoding='utf-8') as f:
     notebook = nbformat.read(f, as_version=4)
 
 # Configure the exporter
-print('Configuring exporter')
-exporter = MarkdownExporter()
+exporter = NotebookExporter()
 
-# Convert the notebook to Markdown
-print('Converting notebook to Markdown')
-markdown, resources = exporter.from_notebook_node(notebook)
+# Convert the notebook to HTML
+html, resources = exporter.from_notebook_node(notebook)
+
+# Convert the HTML to Markdown
+h = html2text.HTML2Text()
+h.ignore_links = False
+markdown = h.handle(html)
 
 # Save the Markdown content to a file
 markdown_file = 'markdown.md'
-print(f'Saving Markdown to: {markdown_file}')
 with open(markdown_file, 'w', encoding='utf-8') as f:
     f.write(markdown)
 
 # Create a directory for saving the output images
 output_dir = 'output_images'
-print(f'Saving output images to: {output_dir}')
 os.makedirs(output_dir, exist_ok=True)
 
 # Find and save output images
@@ -44,14 +39,9 @@ for output_file, output_data in resources.get('outputs', {}).items():
             image_path = os.path.join(output_dir, image_filename)
             with open(image_path, 'wb') as f:
                 f.write(image_data)
-
-# Update the image paths in the Markdown file
-for image_file in os.listdir(output_dir):
-    image_filename = os.path.basename(image_file)
-    new_image_path = f'{output_dir}/{image_filename}'
-    markdown = markdown.replace(image_filename, new_image_path)
+            # Update the image path in the Markdown file
+            markdown = markdown.replace(output_file + '.png', os.path.join(output_dir, image_filename))
 
 # Save the updated Markdown file
-print(f'Saving updated Markdown to: {markdown_file}')
 with open(markdown_file, 'w', encoding='utf-8') as f:
-    f.write(markdown)   
+    f.write(markdown)
