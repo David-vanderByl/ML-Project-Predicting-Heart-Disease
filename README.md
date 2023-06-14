@@ -1,5 +1,3 @@
-**Note this is a markdown conversion of the Predicting Heart Disease.ipynb file to see figures, etc please open that .ipynb file**
-
 # Project: Predicting Heart Disease
 ---
 
@@ -436,7 +434,7 @@ plt.show()
 
 
     
-![png](output_13_0.png)
+![png](Predicting_Heart_Disease_plots/output_0.png)
     
 
 
@@ -488,7 +486,7 @@ plt.show()
 
 
     
-![png](output_14_0.png)
+![png](Predicting_Heart_Disease_plots/output_1.png)
     
 
 
@@ -653,7 +651,7 @@ plt.show()
 
 
     
-![png](output_26_0.png)
+![png](Predicting_Heart_Disease_plots/output_2.png)
     
 
 

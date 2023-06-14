@@ -1,47 +1,48 @@
-from nbconvert import NotebookExporter
-import nbformat
 import os
-import html2text
+import re
+import subprocess
+import shutil
 
 # Specify the path to the .ipynb file
 ipynb_file = 'Predicting Heart Disease.ipynb'
+base_name = os.path.splitext(ipynb_file)[0]
 
-# Load the notebook file
-with open(ipynb_file, 'r', encoding='utf-8') as f:
-    notebook = nbformat.read(f, as_version=4)
+# Replace spaces with underscores in the base_name
+base_name = base_name.replace(' ', '_')
 
-# Configure the exporter
-exporter = NotebookExporter()
+# The name of the subfolder to put the plots in
+plots_folder = f"{base_name}_plots"
 
-# Convert the notebook to HTML
-html, resources = exporter.from_notebook_node(notebook)
+# Make the subfolder
+os.makedirs(plots_folder, exist_ok=True)
 
-# Convert the HTML to Markdown
-h = html2text.HTML2Text()
-h.ignore_links = False
-markdown = h.handle(html)
+# Run nbconvert via command line to convert the notebook to markdown
+subprocess.run(["jupyter", "nbconvert", "--to", "markdown", "--output", "README", ipynb_file])
 
-# Save the Markdown content to a file
-markdown_file = 'markdown.md'
-with open(markdown_file, 'w', encoding='utf-8') as f:
+# The markdown file produced by nbconvert
+markdown_file = "README.md"
+
+# Rename output images and update the image references in the markdown file
+with open(markdown_file, 'r', encoding='utf-8') as f:
+    markdown = f.read()
+
+# Find all image references
+image_refs = re.findall(r'\!\[png\]\((.+)\)', markdown)
+
+for i, image_ref in enumerate(image_refs):
+    old_image_path = image_ref
+    new_image_name = f"output_{i}.png"
+    new_image_path = os.path.join(plots_folder, new_image_name)
+
+    # Rename (move) the image
+    os.rename(old_image_path, new_image_path)
+
+    # Update the image reference in the markdown
+    markdown = markdown.replace(old_image_path, new_image_path)
+
+# Save the updated markdown back to the README.md file
+with open('README.md', 'w', encoding='utf-8') as f:
     f.write(markdown)
 
-# Create a directory for saving the output images
-output_dir = 'output_images'
-os.makedirs(output_dir, exist_ok=True)
-
-# Find and save output images
-for output_file, output_data in resources.get('outputs', {}).items():
-    if isinstance(output_data, dict) and 'image/png' in output_data.get('output_type', []):
-        image_data = output_data.get('data', {}).get('image/png', b'')
-        if image_data:
-            image_filename = f'{output_file}.png'
-            image_path = os.path.join(output_dir, image_filename)
-            with open(image_path, 'wb') as f:
-                f.write(image_data)
-            # Update the image path in the Markdown file
-            markdown = markdown.replace(output_file + '.png', os.path.join(output_dir, image_filename))
-
-# Save the updated Markdown file
-with open(markdown_file, 'w', encoding='utf-8') as f:
-    f.write(markdown)
+# Remove the README_files folder
+shutil.rmtree('README_files', ignore_errors=True)
