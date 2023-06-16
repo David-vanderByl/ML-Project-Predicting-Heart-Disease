@@ -434,7 +434,7 @@ plt.show()
 
 
     
-![png](Predicting_Heart_Disease_plots/output_0.png)
+![png](README_files/README_13_0.png)
     
 
 
@@ -486,7 +486,7 @@ plt.show()
 
 
     
-![png](Predicting_Heart_Disease_plots/output_1.png)
+![png](README_files/README_14_0.png)
     
 
 
@@ -520,7 +520,7 @@ print("Percentage of heart disease patients who are male and over 50: ", percent
 
 - The plot below shows that people that exercise are more likely to have heart disease which seem odd. There is likely more to this story, it could simply be that older people more concerned with their health and therefore exercise, if age and exercise correlates well? Might need to consider this more. Without research into way the data shows this relationship between exercise heart disease it will have to be removed as a feature for the ML model.
 
-![image.png](attachment:fc0912e5-284f-4adc-87f3-6b1858a7a2e0.png)
+![image.png](README_files/fc0912e5-284f-4adc-87f3-6b1858a7a2e0.png)
 
 
 ## 3. Data Cleaning
@@ -651,7 +651,7 @@ plt.show()
 
 
     
-![png](Predicting_Heart_Disease_plots/output_2.png)
+![png](README_files/README_26_0.png)
     
 
 
